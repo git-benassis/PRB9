@@ -1,11 +1,11 @@
 import generation as gen
 import numpy as np
 
-def estimate_P1(num_trials, t,so,r,sigma,K):
+def estimate_P1(S_values, K, r, T):
     esp = 0
-    for i in range(num_trials):
-        esp+=max(K-gen.S(t,so,r,sigma)[-1],0)
-    return np.exp(-r*t)*esp/num_trials
+    for S in S_values:
+        esp += max(K - S[-1], 0)
+    return np.exp(-r * T) * esp / len(S_values)
 
 def calculate_P1(r,sigma,K,s0,T):
     d1 = (np.log(s0/K)+(r+0.5*sigma**2)*T)/(sigma*np.sqrt(T))
