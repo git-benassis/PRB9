@@ -15,16 +15,16 @@ def generate_brownian_motion(n, dim = 1):
     return np.concatenate((np.zeros(1),np.cumsum(Increments)))
 
 def S(T,so,r,sigma):
-    W = generate_brownian_motion(t)
+    W = generate_brownian_motion(T)
     S = []
     for t in range(T):
         S.append(so*np.exp((r-sigma**2/2)*t+sigma*W[t]))
     return S
 
 def multi_S(t,so,r,sigma,m):
-    S_values = np.zeros(m)
+    S_values = []
     for i in range(m):
-        S_values[i] = S(t,so,r,sigma)
+        S_values.append(S(t,so,r,sigma))
     return S_values
 
 def repartition_gaussienne(x): # Fonction de répartition d'une gaussienne centrée réduite
