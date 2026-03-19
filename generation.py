@@ -14,9 +14,12 @@ def generate_brownian_motion(n, dim = 1):
     Increments=generate_gaussian(n)
     return np.concatenate((np.zeros(1),np.cumsum(Increments)))
 
-def S(t,so,r,sigma):
+def S(T,so,r,sigma):
     W = generate_brownian_motion(t)
-    return so*np.exp((r-sigma**2/2)*t+sigma*W[-1])
+    S = []
+    for t in range(T):
+        S.append(so*np.exp((r-sigma**2/2)*t+sigma*W[t]))
+    return S
 
 def multi_S(t,so,r,sigma,m):
     S_values = np.zeros(m)
