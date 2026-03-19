@@ -20,3 +20,7 @@ W=generate_brownian_motion(n)
 temps=np.linspace(0,T,n+1)
 plt.plot(temps,W)
 plt.show()
+
+def S(t,so,r,sigma):
+    W = generate_brownian_motion(t)
+    return so*np.exp((r-sigma**2/2)*t+sigma*W[-1])
