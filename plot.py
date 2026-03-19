@@ -9,5 +9,5 @@ def plot_brownian(W):
 
 def plot_multi_S(S_values):
     for S in S_values:
-        plt.plot(S)
+        plt.loglog(S)
     plt.show()
