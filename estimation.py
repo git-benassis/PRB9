@@ -28,10 +28,35 @@ def IC(S,K, r, T, s0, N, affiche = False):
         print("error :", error)
     return [CI_up, CI_down, error]
 
+def estimate_K(T1, T2, r, K, S0, sigma, tol, max_iter):
+    
+    def f(S, K, r, sigma, dt):
+        return K - S - calculate_P1(S, K, r, sigma, dt)
+    
+    def P1_delta(S, K, r, sigma, T):
+        d1 = (np.log(S/K) + (r + 0.5*sigma**2)*T) / (sigma*np.sqrt(T))
+        return gen.repartition_gaussienne(d1) - 1
+
+    S = S0
+    dt = T2 - T1
+
+    for _ in range(max_iter):
+        val = f(S, K, r, sigma, dt)
+        delta = P1_delta(S, K, r, sigma, dt)
+        deriv = -1 - delta     
+        S_new = S - val / deriv
+
+        if abs(S_new - S) < tol:
+            return S_new
+        
+        S = S_new
+    
+    return S
+
 def estimate_P2(S_values, K, Kbar, r, T1, T2):
     esp = 0
     for S in S_values:
-        if S[T1] >= K:
+        if S[T1] >= Kbar:
             esp += np.exp(-r*T2)*max(K - S(T2),0)
         else:
             esp += np.exp(-r*T1)*max(K-S(T1),0)
