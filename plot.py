@@ -21,7 +21,7 @@ def plot_P1(S_global, K, r, T, s0, sigma,N,nb_traj):
         S = S_global[:N,:]
         P1 = est.estimate_P1(S,K,r,T)
         P1_est.append(P1)
-        CI = est.IC(S,K,r,T,s0,N)
+        CI = est.IC(S,K,r,T,s0,sigma,N)
         IC_up.append(CI[0])
         IC_down.append(CI[1])
     plt.plot(P1_vrai, color='red', label='Vrai Prix')

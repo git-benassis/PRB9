@@ -12,7 +12,7 @@ def calculate_P1(r,sigma,K,s0,T):
     d2 = d1 - sigma*np.sqrt(T)
     return K*np.exp(-r*T)*gen.repartition_gaussienne(-d2)-s0*gen.repartition_gaussienne(-d1)
 
-def IC(S,K, r, T, s0, N, affiche = False):
+def IC(S,K, r, T, s0, sigma, N, affiche = False):
     P = np.exp(-r * T) * np.maximum(K - S[:, -1], 0)
     P1 = estimate_P1(S,K,r,T)
     # 90% Confidence interval bounds
@@ -61,17 +61,3 @@ def estimate_P2(S_values, K, Kbar, r, T1, T2):
         else:
             esp += np.exp(-r*T1)*max(K-S(T1),0)
     return esp / len(S_values)
-
-
-# Paramètres
-
-N = 100000
-K = 1
-r = 0.02
-T = 5
-sigma = 0.2
-s0 = 1
-
-S = gen.multi_S(T,s0,r,sigma,N)
-S = np.array(S)
-IC(S,K,r,T,s0,N,True)
