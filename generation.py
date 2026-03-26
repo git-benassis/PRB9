@@ -25,7 +25,7 @@ def multi_S(t,so,r,sigma,m):
     S_values = []
     for i in range(m):
         S_values.append(S(t,so,r,sigma))
-    return S_values
+    return np.array(S_values)
 
 def repartition_gaussienne(x): # Fonction de répartition d'une gaussienne centrée réduite
     b = [0.2316419,0.319381530,-0.356563782,1.781477937,-1.821255978,1.330274429]
