@@ -1,5 +1,6 @@
 import generation as gen
 import numpy as np
+from scipy.stats import norm
 
 def estimate_P1(S_values, K, r, T):
     esp = 0
@@ -28,28 +29,35 @@ def IC(S,K, r, T, s0, N, affiche = False):
         print("error :", error)
     return [CI_up, CI_down, error]
 
-def estimate_K(T1, T2, r, K, S0, sigma, tol, max_iter):
-    
-    def f(S, K, r, sigma, dt):
-        return K - S - calculate_P1(S, K, r, sigma, dt)
-    
-    def P1_delta(S, K, r, sigma, T):
-        d1 = (np.log(S/K) + (r + 0.5*sigma**2)*T) / (sigma*np.sqrt(T))
-        return gen.repartition_gaussienne(d1) - 1
+def black_scholes_put(S, K, r, sigma, T):
+    """Prix put européen BS"""
+    if T == 0 or S <= 0:
+        return max(K - S, 0)
+    d1 = (np.log(S/K) + (r + 0.5*sigma**2)*T) / (sigma*np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    return K * np.exp(-r*T) * norm.cdf(-d2) - S * norm.cdf(-d1)
 
-    S = S0
-    dt = T2 - T1
+def estimate_K(S0, r, K, sigma, T2_T1, tol, max_iter):
+    
+    def P1_delta(S, r, sigma, T):
+        d1 = (np.log(S0/S) + (r + 0.5*sigma**2)*T) / (sigma*np.sqrt(T))
+        return (-gen.repartition_gaussienne(-d1))
+    
+    def f(S):
+        return (K - S) - calculate_P1(r,sigma,S,S0,T2_T1)
+
+    S = 0.9*K
 
     for _ in range(max_iter):
-        val = f(S, K, r, sigma, dt)
-        delta = P1_delta(S, K, r, sigma, dt)
-        deriv = -1 - delta     
-        S_new = S - val / deriv
+        val = f(S)
+        print(f"x={S},f(x)={val}")
+        delta = P1_delta(S, r, sigma, T2_T1)
+        deriv = - 1 + delta     
 
-        if abs(S_new - S) < tol:
-            return S_new
+        if abs(val) < tol:
+            return S
         
-        S = S_new
+        S = S - val / deriv
     
     return S
 
@@ -65,13 +73,13 @@ def estimate_P2(S_values, K, Kbar, r, T1, T2):
 
 # Paramètres
 
-N = 100000
-K = 1
-r = 0.02
-T = 5
-sigma = 0.2
-s0 = 1
+# N = 100000
+# K = 1
+# r = 0.02
+# T = 5
+# sigma = 0.2
+# s0 = 1
 
-S = gen.multi_S(T,s0,r,sigma,N)
-S = np.array(S)
-IC(S,K,r,T,s0,N,True)
+# S = gen.multi_S(T,s0,r,sigma,N)
+# S = np.array(S)
+# IC(S,K,r,T,s0,N,True)
