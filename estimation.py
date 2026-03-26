@@ -28,6 +28,16 @@ def IC(S,K, r, T, s0, N, affiche = False):
         print("error :", error)
     return [CI_up, CI_down, error]
 
+def estimate_P2(S_values, K, Kbar, r, T1, T2):
+    esp = 0
+    for S in S_values:
+        if S[T1] >= K:
+            esp += np.exp(-r*T2)*max(K - S(T2),0)
+        else:
+            esp += np.exp(-r*T1)*max(K-S(T1),0)
+    return esp / len(S_values)
+
+
 # Paramètres
 
 N = 100000
