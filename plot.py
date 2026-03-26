@@ -32,3 +32,34 @@ def plot_P1(S_global, K, r, T, s0, sigma,N,nb_traj):
     plt.xlabel("Nombre de trajectoires (log(N))")
     plt.ylabel("Prix")
     plt.show()
+
+def plot_P2(S_global, S_global_antithetic, K, Kbar, r, T1, T2, s0, sigma, N, nb_traj):
+    P2_est = []
+    P2_est_antithetic = []
+    IC_up = []
+    IC_down = []
+    IC_antithetic_up = []
+    IC_antithetic_down = []
+    for N in nb_traj:
+        S = S_global[:N,:]
+        S_antithetic = S_global_antithetic[:N,:]
+        P2 = est.estimate_P2(S,K,Kbar,r,T1,T2)
+        P2_est.append(P2)
+        P2_antithetic = est.estimate_P2(S_antithetic,K,Kbar,r,T1,T2)
+        P2_est_antithetic.append(P2_antithetic)
+        CI = est.IC2(S,K, Kbar, r, T1, T2, N)
+        CI_antithetic = est.IC2(S_antithetic,K, Kbar, r, T1, T2, N)
+        IC_up.append(CI[0])
+        IC_down.append(CI[1])
+        IC_antithetic_up.append(CI_antithetic[0])
+        IC_antithetic_down.append(CI_antithetic[1])
+    plt.plot(P2_est, color='red', label='Estimateur de P2 sans réduction de variance')
+    plt.plot(P2_est_antithetic, color = 'green', label='Estimateur de P2 avec réduction de variance')
+    plt.plot(IC_up, color = 'orange', label = 'Intervalle de confiance sans réduction de la variance à 90%')
+    plt.plot(IC_down, color = 'orange')
+    plt.plot(IC_antithetic_up, color = 'blue', label = 'Intervalle de confiance avec réduction de la variance à 90%')
+    plt.plot(IC_antithetic_down, color = 'blue')
+    plt.legend()
+    plt.xlabel("Nombre de trajectoires (log(N))")
+    plt.ylabel("Prix")
+    plt.show()

@@ -59,5 +59,23 @@ def estimate_P2(S_values, K, Kbar, r, T1, T2):
         if S[T1] >= Kbar:
             esp += np.exp(-r*T2)*max(K - S(T2),0)
         else:
-            esp += np.exp(-r*T1)*max(K-S(T1),0)
+            esp += np.exp(-r*T1)*max(K - S(T1),0)
     return esp / len(S_values)
+
+def IC2(S,K, Kbar, r, T1, T2, N, affiche = False):
+    if(S[T1] >= Kbar):
+        P = np.exp(-r*T2)*max(K - S(T2),0)
+    else:
+        P = np.exp(-r*T1)*max(K - S(T1),0)
+    P2 = estimate_P2(S,K, Kbar,r,T1,T2)
+    # 90% Confidence interval bounds
+    std = np.std(P)
+    error = 1.645*std/np.sqrt(N)
+    CI_up = P2 + error
+    CI_down = P2 - error
+    if(affiche):
+        print("Prix estimé :", P2)
+        print("Confidence Interval up :", CI_up)
+        print("Confidence Interval down :", CI_down)
+        print("error :", error)
+    return [CI_up, CI_down, error]
