@@ -13,7 +13,7 @@ def calculate_P1(r,sigma,K,s0,T):
     d2 = d1 - sigma*np.sqrt(T)
     return K*np.exp(-r*T)*gen.repartition_gaussienne(-d2)-s0*gen.repartition_gaussienne(-d1)
 
-def IC(S,K, r, T, s0, N, affiche = False):
+def IC(S,K, r, T, s0, sigma, N, affiche = False):
     P = np.exp(-r * T) * np.maximum(K - S[:, -1], 0)
     P1 = estimate_P1(S,K,r,T)
     # 90% Confidence interval bounds
@@ -28,14 +28,6 @@ def IC(S,K, r, T, s0, N, affiche = False):
         print("Confidence Interval down :", CI_down)
         print("error :", error)
     return [CI_up, CI_down, error]
-
-def black_scholes_put(S, K, r, sigma, T):
-    """Prix put européen BS"""
-    if T == 0 or S <= 0:
-        return max(K - S, 0)
-    d1 = (np.log(S/K) + (r + 0.5*sigma**2)*T) / (sigma*np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
-    return K * np.exp(-r*T) * norm.cdf(-d2) - S * norm.cdf(-d1)
 
 def estimate_K(S0, r, K, sigma, T2_T1, tol, max_iter):
     
@@ -67,9 +59,26 @@ def estimate_P2(S_values, K, Kbar, r, T1, T2):
         if S[T1] >= Kbar:
             esp += np.exp(-r*T2)*max(K - S(T2),0)
         else:
-            esp += np.exp(-r*T1)*max(K-S(T1),0)
+            esp += np.exp(-r*T1)*max(K - S(T1),0)
     return esp / len(S_values)
 
+def IC2(S,K, Kbar, r, T1, T2, N, affiche = False):
+    if(S[T1] >= Kbar):
+        P = np.exp(-r*T2)*max(K - S(T2),0)
+    else:
+        P = np.exp(-r*T1)*max(K - S(T1),0)
+    P2 = estimate_P2(S,K, Kbar,r,T1,T2)
+    # 90% Confidence interval bounds
+    std = np.std(P)
+    error = 1.645*std/np.sqrt(N)
+    CI_up = P2 + error
+    CI_down = P2 - error
+    if(affiche):
+        print("Prix estimé :", P2)
+        print("Confidence Interval up :", CI_up)
+        print("Confidence Interval down :", CI_down)
+        print("error :", error)
+    return [CI_up, CI_down, error]
 
 # Paramètres
 
