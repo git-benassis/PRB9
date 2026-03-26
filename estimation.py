@@ -12,5 +12,28 @@ def calculate_P1(r,sigma,K,s0,T):
     d2 = d1 - sigma*np.sqrt(T)
     return K*np.exp(-r*T)*gen.repartition_gaussienne(-d2)-s0*gen.repartition_gaussienne(-d1)
 
-print(estimate_P1(gen.multi_S(5,1,0.02,0.2,100000),1,0.02,5))
-print(calculate_P1(0.02,0.2,1,1,5))
+# Paramètres
+
+N = 100000
+K = 1
+r = 0.02
+T = 5
+sigma = 0.2
+s0 = 1
+
+S = gen.multi_S(T,s0,r,sigma,N)
+S = np.array(S)
+P = np.exp(-r * T) * np.maximum(K - S[:, -1], 0)
+P1 = estimate_P1(S,K,r,T)
+
+# 90% Confidence interval bounds
+std = np.std(P)
+error = 1.645*std/np.sqrt(N)
+CI_up = P1 + error
+CI_down = P1 - error
+
+print("Vrai prix :", calculate_P1(r,sigma,K,s0,T))
+print("Prix estimé :", P1)
+print("Confidence Interval up :", CI_up)
+print("Confidence Interval down :", CI_down)
+print("error :", error)
