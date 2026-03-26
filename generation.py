@@ -18,7 +18,7 @@ def S(T,so,r,sigma):
     W = generate_brownian_motion(T)
     S = []
     for t in range(T):
-        S.append(so*np.exp((r-sigma**2/2)*t+sigma*W[t]))
+        S.append(so*np.exp((r-sigma**2/2)*t+sigma*W[t+1]))
     return S
 
 def multi_S(t,so,r,sigma,m):

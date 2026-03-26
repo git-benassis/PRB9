@@ -12,3 +12,5 @@ def calculate_P1(r,sigma,K,s0,T):
     d2 = d1 - sigma*np.sqrt(T)
     return K*np.exp(-r*T)*gen.repartition_gaussienne(-d2)-s0*gen.repartition_gaussienne(-d1)
 
+print(estimate_P1(gen.multi_S(5,1,0.02,0.2,100000),1,0.02,5))
+print(calculate_P1(0.02,0.2,1,1,5))
