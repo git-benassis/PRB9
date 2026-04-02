@@ -21,28 +21,33 @@ def S(T,so,r,sigma):
         S.append(so*np.exp((r-sigma**2/2)*t+sigma*W[t+1]))
     return S
 
-def multi_S(t,so,r,sigma,m):
-    S_values = []
-    for i in range(m):
-        S_values.append(S(t,so,r,sigma))
-    return np.array(S_values)
+def multi_S(T_max, s0, r, sigma, m, n_steps):
+    paths = []
+    t_axis = np.linspace(0, T_max, n_steps + 1)
+    drift = (r - 0.5 * sigma**2)
+    for _ in range(m):
+        W = generate_brownian_motion(n_steps)
+        S_path = s0 * np.exp(drift * t_axis + sigma * W)
+        paths.append(S_path)
+    return np.array(paths)
 
-def multi_S_antithetic(T, s0, r, sigma, m):
-    S_values = []
-    half_m = int(m / 2)
+def multi_S_antithetic(T_max, s0, r, sigma, m, n_steps):
+    paths = []
+    dt = T_max / n_steps
+    t_axis = np.linspace(0, T_max, n_steps + 1)
+    drift = (r - 0.5 * sigma**2)
     
-    for t in range(half_m):
-        W_plus = generate_brownian_motion(T) 
+    for _ in range(int(m / 2)):
+        W_plus = generate_brownian_motion(n_steps) # Renvoie le cumul des incréments
+        W_minus = -W_plus
+
+        S_plus = s0 * np.exp(drift * t_axis + sigma * W_plus)
+        S_minus = s0 * np.exp(drift * t_axis + sigma * W_minus)
         
-        W_minus = -np.array(W_plus) 
+        paths.append(S_plus)
+        paths.append(S_minus)
         
-        S_plus = s0 * np.exp((r - sigma**2 / 2) * t + sigma * W_plus[t+1])
-        S_minus = s0 * np.exp((r - sigma**2 / 2) * t + sigma * W_minus[t+1])
-        
-        S_values.append(S_plus)
-        S_values.append(S_minus)
-        
-    return np.array(S_values)
+    return np.array(paths)
 
 def repartition_gaussienne(x): # Fonction de répartition d'une gaussienne centrée réduite
     b = [0.2316419,0.319381530,-0.356563782,1.781477937,-1.821255978,1.330274429]

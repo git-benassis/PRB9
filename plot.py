@@ -33,33 +33,36 @@ def plot_P1(S_global, K, r, T, s0, sigma,N,nb_traj):
     plt.ylabel("Prix")
     plt.show()
 
-def plot_P2(S_global, S_global_antithetic, K, Kbar, r, T1, T2, s0, sigma, N, nb_traj):
-    P2_est = []
-    P2_est_antithetic = []
-    IC_up = []
-    IC_down = []
-    IC_antithetic_up = []
-    IC_antithetic_down = []
-    for N in nb_traj:
-        S = S_global[:N,:]
-        S_antithetic = S_global_antithetic[:N,:]
-        P2 = est.estimate_P2(S,K,Kbar,r,T1,T2)
-        P2_est.append(P2)
-        P2_antithetic = est.estimate_P2(S_antithetic,K,Kbar,r,T1,T2)
-        P2_est_antithetic.append(P2_antithetic)
-        CI = est.IC2(S,K, Kbar, r, T1, T2, N)
-        CI_antithetic = est.IC2(S_antithetic,K, Kbar, r, T1, T2, N)
-        IC_up.append(CI[0])
-        IC_down.append(CI[1])
-        IC_antithetic_up.append(CI_antithetic[0])
-        IC_antithetic_down.append(CI_antithetic[1])
-    plt.plot(P2_est, color='red', label='Estimateur de P2 sans réduction de variance')
-    plt.plot(P2_est_antithetic, color = 'green', label='Estimateur de P2 avec réduction de variance')
-    plt.plot(IC_up, color = 'orange', label = 'Intervalle de confiance sans réduction de la variance à 90%')
-    plt.plot(IC_down, color = 'orange')
-    plt.plot(IC_antithetic_up, color = 'blue', label = 'Intervalle de confiance avec réduction de la variance à 90%')
-    plt.plot(IC_antithetic_down, color = 'blue')
+def plot_P2(S_global, S_global_anti, K, Kbar, r, idx1, idx2, T1_val, T2_val, s0, sigma, nb_traj):
+    P2_est, P2_est_anti = [], []
+    IC_up, IC_down = [], []
+    IC_anti_up, IC_anti_down = [], []
+    
+    # On commence à 2 pour pouvoir calculer un écart-type
+    for n in range(2, nb_traj + 1):
+        # Sélections des n premières trajectoires
+        S_sub = S_global[:n, :]
+        S_anti_sub = S_global_anti[:n, :]
+        
+        # Calcul pour Monte Carlo Classique
+        res = est.IC2(S_sub, K, Kbar, r, idx1, idx2, T1_val, T2_val, n)
+        IC_up.append(res[0])
+        IC_down.append(res[1])
+        P2_est.append(res[2])
+        
+        # Calcul pour Antithétique
+        res_a = est.IC2(S_anti_sub, K, Kbar, r, idx1, idx2, T1_val, T2_val, n)
+        IC_anti_up.append(res_a[0])
+        IC_anti_down.append(res_a[1])
+        P2_est_anti.append(res_a[2])
+        
+    plt.figure(figsize=(10,6))
+    plt.plot(P2_est, 'r-', label='P2 Classique')
+    plt.plot(P2_est_anti, 'g-', label='P2 Antithétique')
+    plt.plot(IC_up, 'orange', linestyle='--', alpha=0.5, label='IC 90% Classique')
+    plt.plot(IC_down, 'orange', linestyle='--', alpha=0.5)
+    plt.plot(IC_anti_up, 'b', linestyle='--', alpha=0.5, label='IC 90% Antithétique')
+    plt.plot(IC_anti_down, 'b', linestyle='--', alpha=0.5)
     plt.legend()
-    plt.xlabel("Nombre de trajectoires (log(N))")
-    plt.ylabel("Prix")
+    plt.title("Convergence de l'estimateur P2")
     plt.show()
