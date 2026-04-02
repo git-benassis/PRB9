@@ -73,3 +73,34 @@ def plot_P2(S_global, S_global_anti, K, Kbar, r, idx1, idx2, T1_val, T2_val, s0,
     plt.title("Convergence et réduction de variance (Antithétique vs Classique)")
     plt.grid(True, alpha=0.3)
     plt.show()
+
+def plot_P2_fonction_S0(S_global,K,Kbar,r,idx_T1,idx_T2,T1,T2,Val_S0,sigma, m, N):
+    T_max = np.maximum(T1,T2)
+    Val_P2 = []
+    Val_P1_T1 = []
+    Val_P1_T2 = []
+
+    for S0_alt in Val_S0:
+        S_global = gen.multi_S_antithetic(T_max, S0_alt, r, sigma, m, N)
+        P2 = np.mean(est.estimate_P2(S_global, K, Kbar, r, idx_T1, idx_T2, T1, T2))
+        Val_P2.append(P2)
+        P1_T1 = est.estimate_P1(S_global,K,r,T1)
+        P1_T2 = est.estimate_P1(S_global,K,r,T2)
+        Val_P1_T1.append(P1_T1)
+        Val_P1_T2.append(P1_T2)
+
+    plt.figure(figsize=(12, 7))
+    
+    plt.plot(Val_S0, Val_P2, color='red', linewidth=2, label=f'P2 : Option Composée (K={K}, Kbar={Kbar:.2f})')
+    plt.plot(Val_S0, Val_P1_T1, color='blue', linestyle='--', alpha=0.8, label=f'P1 : Put Européen à T={T1}')
+    plt.plot(Val_S0, Val_P1_T2, color='green', linestyle=':', alpha=0.8, label=f'P1 : Put Européen à T={T2}')
+    
+    plt.title(f"Sensibilité du prix des options à S0\n(Simulation Monte Carlo Antithétique, m={m} trajectoires)", fontsize=14)
+    plt.xlabel("Prix de l'actif sous-jacent à t=0 (S0)", fontsize=12)
+    plt.ylabel("Prix de l'option (Valeur actualisée)", fontsize=12)
+    
+    plt.axvline(x=K, color='black', linestyle='-', alpha=0.2, label='Strike K')
+    
+    plt.grid(True, which='both', linestyle='--', alpha=0.5)
+    plt.legend(loc='best', frameon=True, shadow=True)
+    plt.show()
