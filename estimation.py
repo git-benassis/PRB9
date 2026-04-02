@@ -73,6 +73,19 @@ def IC2(S_values, K, Kbar, r, T1_idx, T2_idx, T1_val, T2_val, N):
     error = 1.645 * std / np.sqrt(N)
     return [mean_price + error, mean_price - error, mean_price]
 
+def IC2_antithetic(S_values, K, Kbar, r, T1_idx, T2_idx, T1_val, T2_val, N):
+
+    payoffs = estimate_P2(S_values, K, Kbar, r, T1_idx, T2_idx, T1_val, T2_val)
+    
+    paired_payoffs = (payoffs[0::2] + payoffs[1::2]) / 2
+    
+    mean_price = np.mean(paired_payoffs)
+
+    std = np.std(paired_payoffs)
+    
+    error = 1.645 * std / np.sqrt(len(paired_payoffs))
+    return [mean_price + error, mean_price - error, mean_price]
+
 # Paramètres
 
 # N = 100000
