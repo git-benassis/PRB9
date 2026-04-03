@@ -3,15 +3,18 @@ import numpy as np
 import generation as gen
 import estimation as est
 
+# plot a Brownian motion
 def plot_brownian(W):
     plt.plot(W)
     plt.show()
 
+# plot several trajectories of simulated S in log-log scale
 def plot_multi_S(S_values):
     for S in S_values:
         plt.loglog(S)
     plt.show()
 
+# Studies how the MC estimator converges to the analytical price as the number of trajectories N increases, with 90% confidence intervals.
 def plot_P1(S_global, K, r, T, s0, sigma,N,nb_traj):
     P1_vrai = [est.calculate_P1(r, sigma, K, s0, T) for _ in range(len(nb_traj))]
     P1_est = []
@@ -19,7 +22,7 @@ def plot_P1(S_global, K, r, T, s0, sigma,N,nb_traj):
     IC_down = []
     for N in nb_traj:
         S = S_global[:N,:]
-        P1 = est.estimate_P1(S,K,r,T)
+        P1 = est.estimate_P1(S,K,r,T) 
         P1_est.append(P1)
         CI = est.IC(S,K,r,T,s0,sigma,N)
         IC_up.append(CI[0])
@@ -33,6 +36,7 @@ def plot_P1(S_global, K, r, T, s0, sigma,N,nb_traj):
     plt.ylabel("Prix")
     plt.show()
 
+# Studies how standard MC vs antithetic MC estimators converge as N increases, showing variance reduction effect on both point estimates and 90% CIs.
 def plot_P2(S_global, S_global_antithetic, K, Kbar, r, T1, T2, s0, sigma, N, nb_traj):
     P2_est = []
     P2_est_antithetic = []
@@ -63,3 +67,5 @@ def plot_P2(S_global, S_global_antithetic, K, Kbar, r, T1, T2, s0, sigma, N, nb_
     plt.xlabel("Nombre de trajectoires (log(N))")
     plt.ylabel("Prix")
     plt.show()
+
+    def plot_SW()
