@@ -57,33 +57,38 @@ def estimate_K(S0, r, K, sigma, T2_T1, tol, max_iter):
     
     return S
 
-# price of a 2 exercices Bermuda option
-def estimate_P2(S_values, K, Kbar, r, T1, T2):
-    esp = 0
+def estimate_P2(S_values, K, Kbar, r, T1_idx, T2_idx, T1_val, T2_val):
+    payoffs = []
     for S in S_values:
-        if S[T1] >= Kbar:
-            esp += np.exp(-r*T2)*max(K - S(T2),0)
+        if S[T1_idx] >= Kbar:
+            payoff = np.exp(-r * T2_val) * max(K - S[T2_idx], 0)
         else:
-            esp += np.exp(-r*T1)*max(K - S(T1),0)
-    return esp / len(S_values)
+            payoff = np.exp(-r * T1_val) * max(K - S[T1_idx], 0)
+        payoffs.append(payoff)
+    return np.array(payoffs) 
 
-def IC2(S,K, Kbar, r, T1, T2, N, affiche = False):
-    if(S[T1] >= Kbar):
-        P = np.exp(-r*T2)*max(K - S(T2),0)
-    else:
-        P = np.exp(-r*T1)*max(K - S(T1),0)
-    P2 = estimate_P2(S,K, Kbar,r,T1,T2)
-    # 90% Confidence interval bounds
-    std = np.std(P)
-    error = 1.645*std/np.sqrt(N)
-    CI_up = P2 + error
-    CI_down = P2 - error
-    if(affiche):
-        print("Prix estimé :", P2)
-        print("Confidence Interval up :", CI_up)
-        print("Confidence Interval down :", CI_down)
-        print("error :", error)
-    return [CI_up, CI_down, error]
+def IC2(S_values, K, Kbar, r, T1_idx, T2_idx, T1_val, T2_val, N):
+
+    payoffs = estimate_P2(S_values, K, Kbar, r, T1_idx, T2_idx, T1_val, T2_val)
+    
+    mean_price = np.mean(payoffs)
+    std = np.std(payoffs)
+    
+    error = 1.645 * std / np.sqrt(N)
+    return [mean_price + error, mean_price - error, mean_price]
+
+def IC2_antithetic(S_values, K, Kbar, r, T1_idx, T2_idx, T1_val, T2_val, N):
+
+    payoffs = estimate_P2(S_values, K, Kbar, r, T1_idx, T2_idx, T1_val, T2_val)
+    
+    paired_payoffs = (payoffs[0::2] + payoffs[1::2]) / 2
+    
+    mean_price = np.mean(paired_payoffs)
+
+    std = np.std(paired_payoffs)
+    
+    error = 1.645 * std / np.sqrt(len(paired_payoffs))
+    return [mean_price + error, mean_price - error, mean_price]
 
 def Longstaff_Schwartz(S0,r,sigma,K,T1,T2,T3,N):
     # à simuler N fois

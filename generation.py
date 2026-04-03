@@ -13,9 +13,10 @@ def generate_gaussian(n, dim = 1):
     return np.sqrt(-2 * np.log(U1)) * np.cos(2 * np.pi * U2)
 
 # simulate a discrete Brownian motion path of size n+1
-def generate_brownian_motion(n):
-    Increments=generate_gaussian(n)
-    return np.concatenate((np.zeros(1),np.cumsum(Increments)))
+def generate_brownian_motion(n_steps, T_max):
+    dt = T_max / n_steps
+    increments = npr.normal(0, np.sqrt(dt), n_steps) 
+    return np.concatenate((np.zeros(1), np.cumsum(increments)))
 
 # simulate the array of S(t) for each t in [1,T]
 def S(T,so,r,sigma):
@@ -26,28 +27,33 @@ def S(T,so,r,sigma):
     return S
 
 # generate m independant vector S
-def multi_S(t,so,r,sigma,m):
-    S_values = []
-    for i in range(m):
-        S_values.append(S(t,so,r,sigma))
-    return np.array(S_values)
+def multi_S(T_max, s0, r, sigma, m, n_steps):
+    paths = []
+    t_axis = np.linspace(0, T_max, n_steps + 1)
+    drift_coeff = (r - 0.5 * sigma**2)
+    
+    for _ in range(m):
+        W = generate_brownian_motion(n_steps, T_max)
+        S_path = s0 * np.exp(drift_coeff * t_axis + sigma * W)
+        paths.append(S_path)
+    return np.array(paths)
 
 # generate m independant vector S using antithetic variables
-def multi_S_antithetic(T, s0, r, sigma, m):
-    S_values = []
-    half_m = int(m / 2)
-    for t in range(half_m):
-        W_plus = generate_brownian_motion(T) 
+def multi_S_antithetic(T_max, s0, r, sigma, m, n_steps):
+    paths = []
+    t_axis = np.linspace(0, T_max, n_steps + 1)
+    drift = (r - 0.5 * sigma**2)
+    
+    for _ in range(int(m / 2)):
+        W_plus = generate_brownian_motion(n_steps, T_max) 
+        W_minus = -W_plus
+
+        S_plus = s0 * np.exp(drift * t_axis + sigma * W_plus)
+        S_minus = s0 * np.exp(drift * t_axis + sigma * W_minus)
         
-        W_minus = -np.array(W_plus) 
-        
-        S_plus = s0 * np.exp((r - sigma**2 / 2) * t + sigma * W_plus[t+1])
-        S_minus = s0 * np.exp((r - sigma**2 / 2) * t + sigma * W_minus[t+1])
-        
-        S_values.append(S_plus)
-        S_values.append(S_minus)
-        
-    return np.array(S_values)
+        paths.append(S_plus)
+        paths.append(S_minus)
+    return np.array(paths)
 
 # Repartition function of N(0,1)
 def repartition_gaussienne(x): 
