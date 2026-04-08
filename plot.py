@@ -37,7 +37,7 @@ def plot_P1(S_global, K, r, T, s0, sigma,N,nb_traj):
     plt.show()
 
 # Studies how standard MC vs antithetic MC estimators converge as N increases, showing variance reduction effect on both point estimates and 90% CIs.
-def plot_P2(S_global, S_global_anti, K, Kbar, r, idx1, idx2, T1_val, T2_val, s0, sigma, nb_traj):
+def plot_P2(S_global, S_global_anti, K, Kbar, r, idx1, idx2, T1_val, T2_val, nb_traj):
     P2_est, P2_est_anti = [], []
     IC_up, IC_down = [], []
     IC_anti_up, IC_anti_down = [], []
@@ -85,12 +85,17 @@ def plot_P2_fonction_S0(S_global,K,Kbar,r,idx_T1,idx_T2,T1,T2,Val_S0,sigma, m, N
     Val_P1_T2 = []
 
     for S0_alt in Val_S0:
-        S_global = gen.multi_S_antithetic(T_max, S0_alt, r, sigma, m, N)
+        S_global = gen.multi_S_antithetic(T2, S0_alt, r, sigma, m, N)
+        
         P2 = np.mean(est.estimate_P2(S_global, K, Kbar, r, idx_T1, idx_T2, T1, T2))
         Val_P2.append(P2)
-        P1_T1 = est.estimate_P1(S_global,K,r,T1)
-        P1_T2 = est.estimate_P1(S_global,K,r,T2)
+        
+        payoffs_T1 = [max(K - s[idx_T1], 0) for s in S_global]
+        P1_T1 = np.exp(-r * T1) * np.mean(payoffs_T1)
         Val_P1_T1.append(P1_T1)
+        
+        payoffs_T2 = [max(K - s[idx_T2], 0) for s in S_global]
+        P1_T2 = np.exp(-r * T2) * np.mean(payoffs_T2)
         Val_P1_T2.append(P1_T2)
 
     plt.figure(figsize=(12, 7))
@@ -107,4 +112,14 @@ def plot_P2_fonction_S0(S_global,K,Kbar,r,idx_T1,idx_T2,T1,T2,Val_S0,sigma, m, N
     
     plt.grid(True, which='both', linestyle='--', alpha=0.5)
     plt.legend(loc='best', frameon=True, shadow=True)
+    plt.show()
+
+def plot_SW(S0_vals,sigmas,sw_results):
+    plt.figure()
+    for sig, vals in sw_results.items():
+        plt.plot(S0_vals, vals, label=f'Sigma = {sig}')
+    plt.title("Valeur de la Switch Option (Flexibilité)")
+    plt.xlabel("S0")
+    plt.ylabel("SW Price")
+    plt.legend()
     plt.show()
