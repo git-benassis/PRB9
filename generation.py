@@ -56,8 +56,15 @@ def multi_S_antithetic(T_max, s0, r, sigma, m, n_steps):
     return np.array(paths)
 
 # Repartition function of N(0,1)
-def repartition_gaussienne(x): 
-    b = [0.2316419,0.319381530,-0.356563782,1.781477937,-1.821255978,1.330274429]
-    t = 1/(1+b[0]*x)
-    return 1 - 1/(np.sqrt(2*np.pi))*np.exp(-0.5*x**2)*(b[1]*t+b[2]*t**2+b[3]*t**3+b[4]*t**4+b[5]*t**5)
+def repartition_gaussienne(x):
+
+    sign = np.sign(x)
+    x = np.abs(x)
+    
+    b = [0.2316419, 0.319381530, -0.356563782, 1.781477937, -1.821255978, 1.330274429]
+    t = 1 / (1 + b[0] * x)
+    poly = (b[1]*t + b[2]*t**2 + b[3]*t**3 + b[4]*t**4 + b[5]*t**5)
+    phi = 1 - 1 / (np.sqrt(2 * np.pi)) * np.exp(-0.5 * x**2) * poly
+    
+    return 0.5 * (1.0 + sign * (2.0 * phi - 1.0))
 
