@@ -124,6 +124,32 @@ def plot_SW(S0_vals,sigmas,sw_results):
     plt.legend()
     plt.show()
 
+def plot_relative_error(N_vals,S0, r, sigma, K, T1, T2, T3, n_steps ):
+    X=N_vals
+    Y=[100*(sigma/np.sqrt(N))/est.Longstaff_Schwartz_2_temps(S0, r, sigma, K, T1, T2, T3, N, n_steps) for N in X ]
+    plt.plot(X,Y,'o-', linewidth=2, markersize=8)
+    plt.xlabel("Nombre de trajectoires (N)")
+    plt.ylabel("Erreur relative en %")
+    plt.title(f"Convergence de P3 (erreur relative)")
+    plt.grid(True, alpha=0.3)
+    plt.show()
+
+def plot_P3_LS(S0,r,sigma,K,T1,T2,T3,N_values,n_steps):
+    P3_vals=[]
+    for N in N_values:
+        P3 = est.Longstaff_Schwartz_3_temps(S0, r, sigma, K, T1, T2, T3, N, n_steps)
+        P3_vals.append(P3)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(N_values, P3_vals, label=r"$P_3$", linewidth=2)
+
+    plt.xlabel(r"$S_0$")
+    plt.ylabel("Prix de l'option")
+    plt.title(r"Prix $P_3$ en fonction de $N$")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
 
 def plot_P1_P2_P3(S0_vals,r,sigma, K, T1, T2, T3, N_test,n_steps):
     P1_vals = []
@@ -140,7 +166,7 @@ def plot_P1_P2_P3(S0_vals,r,sigma, K, T1, T2, T3, N_test,n_steps):
         Kbar=est.estimate_K(S0, r, K, sigma, T3-T2, 1e-05, N_test)
         P2=np.mean(est.estimate_P2(S_values,K, Kbar, r, idx_T2, idx_T3, T2, T3))
 
-        P3 = est.Longstaff_Schwartz(S0, r, sigma, K, T1, T2, T3, N_test, n_steps)
+        P3 = est.Longstaff_Schwartz_3_temps(S0, r, sigma, K, T1, T2, T3, N_test, n_steps)
 
         P1_vals.append(P1)
         P2_vals.append(P2)
@@ -158,15 +184,94 @@ def plot_P1_P2_P3(S0_vals,r,sigma, K, T1, T2, T3, N_test,n_steps):
     plt.grid(True)
     plt.show()
 
+def plot_assess_regression_LS_P2(S0,r,sigma, K, T1, T2, N_values, n_steps):
+    P2_est=[]
+    P2_LS=[]
+    erreur_relative = []
 
-plot_P1_P2_P3(
-    S0_vals=np.linspace(0.5, 2.0, 15),
-    r=0.02,
-    sigma=0.2,
-    K=1,
-    T1=1,
-    T2=3,
-    T3=5,
-    N_test=10000,
-    n_steps=252
-)
+    idx_T1 = int(round(T1* n_steps / T2)) 
+    idx_T2 = n_steps
+
+    for N in N_values:
+        S_values=gen.multi_S_antithetic(T2, S0, r, sigma, N, n_steps)
+        Kbar=est.estimate_K(S0, r, K, sigma, T2-T1, 1e-05, N)
+        p2_est = np.mean(est.estimate_P2(S_values,K, Kbar, r, idx_T1, idx_T2, T1, T2))
+        P2_est.append(p2_est)
+
+        p2_ls = est.Longstaff_Schwartz_2_temps(S_values,S0, r, sigma, K, T1, T2, N, n_steps)
+        P2_LS.append(p2_ls)
+        
+        # Calcul erreur relative
+        err = abs(p2_ls - p2_est) / p2_est * 100
+        erreur_relative.append(err)
+
+    plt.figure(figsize=(12, 6))
+    
+    # Sous-plot 1: Prix
+    ax1 = plt.subplot(1, 2, 1)
+    ax1.plot(N_values, P2_est, 'o-', label=r"$P2_{estimate}$", linewidth=2, markersize=6)
+    ax1.plot(N_values, P2_LS, 's-', label=r"$P2_{LS}$", linewidth=2, markersize=6)
+    ax1.set_xlabel(r"$N$")
+    ax1.set_ylabel("Prix de l'option")
+    ax1.set_title(r"Prix $P2$ en fonction de $N$")
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+    
+    # Sous-plot 2: Erreur relative
+    ax2 = plt.subplot(1, 2, 2)
+    ax2.plot(N_values, erreur_relative, 'r^-', linewidth=2, markersize=8)
+    ax2.set_xlabel(r"$N$")
+    ax2.set_ylabel("Erreur relative (%)")
+    ax2.set_title(r"Erreur relative $|P2_{LS} - P2_{estimate}| / P2_{estimate} \times 100$")
+    ax2.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+
+
+# plot_relative_error(
+#     N_vals = [1000 + 2*i*1000 for i in range(13)],
+#     S0=1,
+#     r=0.02,
+#     sigma=0.2,
+#     K=1,
+#     T1=1,
+#     T2=3,
+#     T3=5,
+#     n_steps=252
+# )
+
+# plot_P1_P2_P3(
+#     S0_vals=np.linspace(0.5, 2.0, 20),
+#     r=0.02,
+#     sigma=0.2,
+#     K=1,
+#     T1=1,
+#     T2=3,
+#     T3=5,
+#     N_test=22000,
+#     n_steps=252
+# )
+
+# plot_assess_regression_LS_P2(
+#     S0=1,
+#     r=0.02,
+#     sigma=0.2,
+#     K=1,
+#     T1=1,
+#     T2=3,
+#     N_values=[1000 + 2*i*1000 for i in range(40)],
+#     n_steps=252
+#     )
+
+# plot_P3_LS(
+#     S0=1,
+#     r=0.02,
+#     sigma=0.2,
+#     K=1,
+#     T1=1,
+#     T2=3,
+#     T3=5,
+#     N_values=[100 + 2*i*150 for i in range(100)],
+#     n_steps=252
+# )

@@ -2,12 +2,12 @@ import generation as gen
 import numpy as np
 from scipy.stats import norm
 
-# estimation of an European call using Monte Carlo
+# estimation of an European put using Monte Carlo
 def estimate_P1(S_values, K, r, T, idx = -1):
     payoffs = [max(K - S[idx], 0) for S in S_values]
     return np.exp(-r * T) * np.mean(payoffs)
 
-# calculate the analytical value of an European call
+# calculate the analytical value of an European put
 def calculate_P1(r, sigma, K, S_t, T_remaining):
     if T_remaining <= 0: return max(K - S_t, 0)
     d1 = (np.log(S_t / K) + (r + 0.5 * sigma**2) * T_remaining) / (sigma * np.sqrt(T_remaining))
@@ -35,7 +35,7 @@ def IC(S,K, r, T, s0, sigma, N, affiche = False):
 def estimate_K(S0, r, K, sigma, T2_T1, tol, max_iter):
     
     def P1_delta(S, r, sigma, T):
-        d1 = (np.log(S0/S) + (r + 0.5*sigma**2)*T) / (sigma*np.sqrt(T))
+        d1 = (np.log(S0/S) + (r + 0.5*sigma**2)*T) / (sigma*np.sqrt(T))  
         return (-gen.repartition_gaussienne(-d1))
     
     def f(S):
@@ -91,7 +91,7 @@ def IC2_antithetic(S_values, K, Kbar, r, T1_idx, T2_idx, T1_val, T2_val, N):
 
 
 from scipy.stats import norm
-def Longstaff_Schwartz(S0,r,sigma,K,T1,T2,T3,N,n_steps):
+def Longstaff_Schwartz_3_temps(S0,r,sigma,K,T1,T2,T3,N,n_steps):
     # à simuler N fois
     S=gen.multi_S_antithetic(T3, S0, r, sigma, N, n_steps)
     idx1 = int(round(T1 * n_steps / T3))  # 1/5 * 252 = 50
@@ -119,26 +119,59 @@ def Longstaff_Schwartz(S0,r,sigma,K,T1,T2,T3,N,n_steps):
     P3_paths = np.exp(-r * T1) * np.maximum(exer_T1, cont_T1)
     return np.mean(P3_paths)
 
+def Longstaff_Schwartz_2_temps(S,S0,r,sigma,K,T1,T2,N,n_steps):
+    idx1 = int(round(T1 * n_steps / T2))
+    idx2 = n_steps  # Dernier indice
+    
+    S1 = S[:, idx1]  # Toutes trajectoires à T1
+    S2 = S[:, idx2]  # Toutes trajectoires à T2
+    payoff_T2 = np.maximum(K - S2, 0)
+    cont_T1 = np.exp(-r*(T2-T1)) * payoff_T2
+
+    # Régression linéaire
+    B = np.column_stack([np.ones(N), S1, S1**2])
+    omega, residuals, rank, sv = np.linalg.lstsq(B, cont_T1, rcond=None)
+
+    # Phase 2 : Resimuler avec les mêmes omega
+    S_new = gen.multi_S_antithetic(T2, S0, r, sigma, N, n_steps)
+    S1_new = S_new[:, idx1]
+    S2_new = S_new[:, idx2] 
+    B_new = np.column_stack([np.ones(N), S1_new, S1_new**2])
+    cont_T1_est = np.exp(-r * (T2 - T1)) * (B_new @ omega)
+    intr_T1 = np.maximum(K - S1_new, 0)
+
+    # Décision d'exercice vectorisée
+    exercise = intr_T1 > cont_T1_est  # boolean array
+    payoff_T1 = np.exp(-r * T1) * intr_T1
+    payoff_T2 = np.exp(-r * T2) * np.maximum(K - S2_new, 0)
+    
+    P2_paths = np.where(exercise, payoff_T1, payoff_T2)
+    return np.mean(P2_paths)
+
 # Paramètres
 
-# N = 100000
-# K = 1
-# r = 0.02
-# T = 5
-# sigma = 0.2
-# s0 = 1
+N = 10000
+K = 1
+r = 0.02
+T = 5
+sigma = 0.2
+s0 = 1
 
 # S = gen.multi_S(T,s0,r,sigma,N)
 # S = np.array(S)
 # IC(S,K,r,T,s0,N,True)
 
 S0, r, sigma, K = 1.0, 0.02, 0.2, 1.0
-T1, T2, T3 = 1.0, 3.0, 5.0  # Années
+T1, T2 = 1.0, 3.0  # Années
 n_steps= 252 # jours/an
 N_test = 100000
 
-P3 = Longstaff_Schwartz(S0, r, sigma, K, T1, T2, T3, N_test,n_steps)
-print(f"P3 ≈ {P3:.4f}")
+# P2 = Longstaff_Schwartz_2_temps(S0, r, sigma, K, T1, T2, N_test,n_steps)
+# print(f"P2 ≈ {P2:.4f}")
+
+
+# P3 = Longstaff_Schwartz_3_temps(S0, r, sigma, K, T1, T2, T3, N_test,n_steps)
+# print(f"P3 ≈ {P3:.4f}")
 
 
 def calculate_switch_option(S0_range, r, sigma_list, K, T1, T2, N):
