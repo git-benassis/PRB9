@@ -1,6 +1,5 @@
 # Bermudan Options Pricing — Black-Scholes & Longstaff-Schwartz
 
-> Cours PRB222 — ENSTA Paris / Institut Polytechnique de Paris  
 > Monte Carlo pricing of Bermudan put options under Black-Scholes dynamics
 
 ***
@@ -62,7 +61,7 @@ Contains all pricing functions:
 Plotting utilities for all figures:
 - Convergence plots with 90% confidence intervals
 - $P_1$, $P_2$, $P_3$ as a function of $S_0$
-- Regression quality diagnostics for Q16
+- Regression quality diagnostics for a 2-exercice put using Longstaff-Scwhartz
 
 ### `main.py`
 Entry point that runs all questions sequentially and produces the figures.
