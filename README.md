@@ -37,69 +37,75 @@ $$dS(t) = S(t)(r \, dt + \sigma \, dW(t)), \quad S(0) = S_0 > 0$$
 
 ```
 bermudan-options/
-├── generators.py          # Random number generation (Uniform → Gaussian → GBM paths)
-├── estimators.py          # Pricing functions: P1, P2, P3, Longstaff-Schwartz
-├── main.ipynb             # Full notebook with results and plots
+├── generation.py      # Random number generation (Uniform → Gaussian → GBM paths)
+├── estimation.py      # Pricing functions: P1, P2, P3, Longstaff-Schwartz
+├── plot.py            # Plotting utilities
+├── main.py            # Main script: runs all pricing and generates plots
 └── README.md
 ```
 
+### `generation.py`
+Implements all random number generation from scratch using only a **uniform random generator**, as required:
+- Gaussian generation via the Box-Muller or inverse CDF method
+- Gaussian CDF approximation via Abramowitz-Stegun formula (error $< 7.5 \times 10^{-8}$)
+- Simulation of GBM paths $\{S_{T_1}, S_{T_2}, S_{T_3}\}$
+- Antithetic variates for variance reduction
+
+### `estimation.py`
+Contains all pricing functions:
+- `calculate_P1` — closed-form Black-Scholes European put price
+- `estimate_K` — numerical computation of the optimal exercise threshold $\bar{K}$ for $P_2$
+- `estimate_P2` — Monte Carlo estimator of the Bermudan 2-exercise put price
+- `Longstaff_Schwartz` — regression-based Monte Carlo estimator of the Bermudan 3-exercise put price $P_3$
+
+### `plot.py`
+Plotting utilities for all figures:
+- Convergence plots with 90% confidence intervals
+- $P_1$, $P_2$, $P_3$ as a function of $S_0$
+- Regression quality diagnostics for Q16
+
+### `main.py`
+Entry point that runs all questions sequentially and produces the figures.
+
 ***
 
-## Key Results
+## Methodology
 
-### Q4 — European Put $P_1$ convergence
-Monte Carlo estimation of $P_1 = e^{-rT}\mathbb{E}[(K - S(T))_+]$ with 90% confidence intervals, compared to the Black-Scholes closed-form price.
+### European Put $P_1$
+Closed-form Black-Scholes formula:
 
-### Q9/Q10 — Bermudan Put $P_2$ (2 exercise dates)
-The price $P_2$ is computed via:
+$$P_1 = e^{-rT}\mathbb{E}\left[(K - S(T))_+\right]$$
+
+### Bermudan Put $P_2$ (2 exercise dates)
+Optimal stopping at $T_1$: exercise if $S(T_1) < \bar{K}$, where $\bar{K}$ satisfies:
 
 $$P_2 = e^{-rT_2}\mathbb{E}\left[(K - S(T_2))_+ \mathbf{1}_{S(T_1) \geq \bar{K}}\right] + e^{-rT_1}\mathbb{E}\left[(K - S(T_1))\mathbf{1}_{S(T_1) < \bar{K}}\right]$$
 
-where $\bar{K}$ is the optimal exercise threshold, computed numerically.  
-Variance reduction via **antithetic variates** is implemented and compared to the classical estimator.
+### Bermudan Put $P_3$ (3 exercise dates) — Longstaff-Schwartz
+Since $P_2$ at $T_1$ has no closed form, the Longstaff-Schwartz algorithm approximates it by regressing $P_2|_{T_2}$ onto the polynomial basis $\mathcal{B} = \{1, S_{T_1}, S_{T_1}^2, S_{T_1}^3\}$.
 
-### Q14/Q15 — Bermudan Put $P_3$ (3 exercise dates) via Longstaff-Schwartz
-Since $P_2$ at $T_1$ has no closed form, the **Longstaff-Schwartz algorithm** is used:
-
-1. Simulate paths $\{S_{T_1}, S_{T_2}, S_{T_3}\}$
-2. Compute $P_2|_{T_2}$ (continuation value at $T_2$)
-3. Regress $P_2|_{T_2}$ onto the polynomial basis $\mathcal{B} = \{1, S_{T_1}, S_{T_1}^2, S_{T_1}^3\}$ using OLS
-4. **Re-simulate** fresh paths (to avoid measurability bias)
-5. Estimate $P_3$ using the approximated continuation value at $T_1$
-
-The regression coefficients $\{\omega_k\}$ are estimated by solving:
+The regression coefficients $\{\omega_k\}$ solve:
 
 $$A \cdot \Omega = B$$
 
 where $A_{i,j} = \widehat{\text{Cov}}(S_{T_1}^i, S_{T_1}^j)$ and $B_i = \widehat{\text{Cov}}(P_2|_{T_2}, S_{T_1}^i)$.
 
-### Q15 — $P_1$, $P_2$, $P_3$ as a function of $S_0$
-
-The three prices are plotted on the same graph for $S_0 \in [0.5, 2]$:
-
-- All three curves are **decreasing** in $S_0$ (put options)
-- The hierarchy $P_1 \leq P_2 \leq P_3$ holds: more exercise dates → higher option value
-- The spread between curves is larger for low $S_0$ (deep in-the-money region)
-
-### Q16 — Quality of the Longstaff-Schwartz regression (Facultatif)
-The regression quality is evaluated by comparing the LS-estimated $P_2$ against the reference Monte Carlo estimator as $N$ increases. The relative error decreases with $N$, confirming convergence of the polynomial regression approximation.
+Fresh trajectories are then re-simulated to estimate $P_3$ without measurability bias.
 
 ***
 
 ## Implementation Notes
 
 ### Random Number Generation
-All simulations use a **uniform random generator** as the base source (as required by the problem statement), transformed via the inverse CDF method and the **Abramowitz-Stegun approximation** of the Gaussian CDF:
+All simulations use a **uniform generator** as the sole source of randomness, transformed via the **Abramowitz-Stegun approximation** of $\Phi$:
 
 $$\Phi(x) \approx 1 - \frac{1}{\sqrt{2\pi}} e^{-\frac{x^2}{2}} \left( b_1 t + b_2 t^2 + b_3 t^3 + b_4 t^4 + b_5 t^5 \right), \quad t = \frac{1}{1 + b_0 x}$$
 
-with $|\epsilon(x)| < 7.5 \times 10^{-8}$.
-
 ### Variance Reduction
-Antithetic variates are used in all Monte Carlo estimations (Q9+). For each path driven by $Z \sim \mathcal{N}(0,1)$, its antithetic counterpart $-Z$ is also simulated.
+Antithetic variates are used throughout: for each path driven by $Z \sim \mathcal{N}(0,1)$, its counterpart $-Z$ is also simulated.
 
-### Bias-Free Regression
-The Longstaff-Schwartz algorithm uses **two independent sets of trajectories**: one for the regression step and one for the valuation step, avoiding the non-measurability bias that would arise from reusing the same paths.
+### Bias-Free Longstaff-Schwartz
+The regression step and the valuation step use **two independent sets of trajectories** to avoid the non-measurability bias that arises from reusing the same paths.
 
 ***
 
@@ -115,13 +121,19 @@ matplotlib
 
 ## Usage
 
-```python
-from estimators import calculate_P1, Longstaff_Schwartz
+```bash
+python main.py
+```
 
-# European Put
+Or use individual modules:
+
+```python
+from estimation import calculate_P1, Longstaff_Schwartz
+
+# European put (closed-form)
 P1 = calculate_P1(r=0.02, sigma=0.2, K=1, S0=1, T=5)
 
-# Bermudan Put (3 dates) via Longstaff-Schwartz
+# Bermudan put P3 via Longstaff-Schwartz
 P3 = Longstaff_Schwartz(S0=1, r=0.02, sigma=0.2, K=1,
                          T1=1, T2=3, T3=5, N=50000, n_steps=252)
 ```
